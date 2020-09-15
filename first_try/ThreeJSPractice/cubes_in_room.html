@@ -1,0 +1,141 @@
+
+<head>
+<style>
+html, body {
+    margin: 0;
+    height: 100%;
+}
+#c {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+</style>
+</head>
+<script type="module">
+import * as THREE from 'https://threejsfundamentals.org/threejs/resources/threejs/r115/build/three.module.js';
+import {OrbitControls} from 'https://threejsfundamentals.org/threejs/resources/threejs/r115/examples/jsm/controls/OrbitControls.js';
+import {GLTFLoader} from 'https://threejsfundamentals.org/threejs/resources/threejs/r115/examples/jsm/loaders/GLTFLoader.js';
+
+function main() {
+  //Setup
+  const canvas = document.querySelector('#c');
+  const renderer = new THREE.WebGLRenderer({canvas});
+  renderer.autoClearColor = false;
+
+  //Making frustrum
+  const fov = 75;
+  const aspect = 2;  // the canvas default
+  const near = 0.1;
+  const far = 100;
+  const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  camera.position.z = 3;
+
+  //Controlling room?
+  const controls = new OrbitControls(camera, canvas);
+  controls.target.set(0, 0, 0);
+  controls.update();
+
+  //Make new scene
+  const scene = new THREE.Scene();
+
+  //Directional light source
+  {
+    const color = 0xFFFFFF;
+    const intensity = 1;
+    const light = new THREE.DirectionalLight(color, intensity);
+    light.position.set(-1, 2, 4);
+    scene.add(light);
+  }
+
+  //Creating floating cube (geometry)
+  const boxWidth = 1;
+  const boxHeight = 1;
+  const boxDepth = 1;
+  const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
+
+  function makeInstance(geometry, color, x) {
+    const material = new THREE.MeshPhongMaterial({color});
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+    cube.position.x = x;
+    return cube;
+  }
+
+  {
+    const gltfLoader = new GLTFLoader();
+    const url = './assets/park_bench.gltf';
+    gltfLoader.load(url, (gltf) => {
+      const root = gltf.scene;
+      scene.add(root);
+  });
+  //Adding objects in this array
+  //If empty, no objects, but can't delete whole array
+  const cubes = [
+    makeInstance(geometry, 0x44aa88,  0),
+    // makeInstance(geometry, 0x8844aa, -2),
+    // makeInstance(geometry, 0xaa8844,  2),
+  ];
+
+  //Setting background of cubemap
+  {
+    const loader = new THREE.CubeTextureLoader();
+    const texture = loader.load([
+      'https://threejsfundamentals.org/threejs/resources/images/cubemaps/computer-history-museum/pos-x.jpg',
+      'https://threejsfundamentals.org/threejs/resources/images/cubemaps/computer-history-museum/neg-x.jpg',
+      'https://threejsfundamentals.org/threejs/resources/images/cubemaps/computer-history-museum/pos-y.jpg',
+      'https://threejsfundamentals.org/threejs/resources/images/cubemaps/computer-history-museum/neg-y.jpg',
+      'https://threejsfundamentals.org/threejs/resources/images/cubemaps/computer-history-museum/pos-z.jpg',
+      'https://threejsfundamentals.org/threejs/resources/images/cubemaps/computer-history-museum/neg-z.jpg',
+    ]);
+    scene.background = texture;
+  }
+
+  function resizeRendererToDisplaySize(renderer) {
+    const canvas = renderer.domElement;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    const needResize = canvas.width !== width || canvas.height !== height;
+    if (needResize) {
+      renderer.setSize(width, height, false);
+    }
+    return needResize;
+  }
+
+
+  function render() {
+    // time *= 0.001;
+
+    //Prevents the image from being pixelated and blurry
+    if (resizeRendererToDisplaySize(renderer)) {
+      const canvas = renderer.domElement;
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+    }
+    //Make cubes rotates
+    // cubes.forEach((cube, ndx) => {
+    //   const speed = 1 + ndx * .1;
+    //   const rot = time * speed;
+    //   cube.rotation.x = rot;
+    //   cube.rotation.y = rot;
+    // });
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
+}
+
+main();
+
+</script>
+
+
+<!-- Canvas elements have 2 sizes -->
+<!-- 1) Size the canvas is displayed on the page (set with CSS) -->
+<!-- 2) Number of pixels in canvas itself = resolution/drawingbuffersize - call renderer.setSize -->
+<!-- Default = 300x150 CSS pixels in size -->
+<body>
+    <canvas id="c"></canvas>
+</body>
+
